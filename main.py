@@ -2,7 +2,7 @@ import sys
 
 from PyQt5 import uic
 from PyQt5.QtWidgets import QMainWindow, QApplication, QLabel, QTextEdit
-from PyQt5.QtCore import QBasicTimer
+from PyQt5.QtCore import QBasicTimer, Qt
 
 from config.Config import Config
 from ConnectorBus.ConnectorBus import ConnectorBus
@@ -25,6 +25,7 @@ class MainWindow(QMainWindow):
         self.debug()
         # Connect up the buttons.
         self.connectButton.clicked.connect(self.onConnect)
+        self.query.returnPressed.connect(self.onSend)
         self.sendButton.clicked.connect(self.onSend)
         self.timer = QBasicTimer()
         self.timer.start(100, self)
@@ -39,6 +40,26 @@ class MainWindow(QMainWindow):
         else:
             self.statusBar().showMessage("Not connected " + self._connection.getErrorMessage())
             self.connectButton.setEnabled(True)
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_A:
+            self._connection.send("S:1800;")
+
+        if event.key() == Qt.Key_D:
+            self._connection.send("S:1300;")
+
+        if event.key() == Qt.Key_S:
+            self._connection.send("S:1500;")
+
+
+    def onButtonUp(self):
+        print("up")
+        pass
+
+    def onButtonDown(self):
+        print("down")
+        pass
+
 
     def onSend(self):
         command = self.query.text()
