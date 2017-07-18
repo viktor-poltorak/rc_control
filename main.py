@@ -1,15 +1,17 @@
 import sys
 
 from PyQt5 import uic
-from PyQt5.QtWidgets import QMainWindow, QApplication, QLabel, QTextEdit
 from PyQt5.QtCore import QBasicTimer, Qt
+from PyQt5.QtWidgets import QMainWindow, QApplication, QLabel
 
-from config.Config import Config
 from ConnectorBus.ConnectorBus import ConnectorBus
+from Finder.Finder import Finder
+from config.Config import Config
 
 
 class MainWindow(QMainWindow):
     config = None
+    _finder = None
     _connection = None
 
     def __init__(self):
@@ -17,6 +19,11 @@ class MainWindow(QMainWindow):
 
         self.config = Config("config.ini")
         self.__initUI()
+        self.statusBar().showMessage("Board not connected")
+
+        self._finder = Finder(self.statusBar());
+        self._finder.startFinding();
+
         self.show()
 
     def __initUI(self):
@@ -51,7 +58,6 @@ class MainWindow(QMainWindow):
         if event.key() == Qt.Key_S:
             self._connection.send("S:1500;")
 
-
     def onButtonUp(self):
         print("up")
         pass
@@ -59,7 +65,6 @@ class MainWindow(QMainWindow):
     def onButtonDown(self):
         print("down")
         pass
-
 
     def onSend(self):
         command = self.query.text()
