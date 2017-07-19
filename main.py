@@ -21,7 +21,7 @@ class MainWindow(QMainWindow):
         self.__initUI()
         self.statusBar().showMessage("Board not connected")
 
-        self._finder = Finder(self.statusBar());
+        self._finder = Finder(self.statusBar(), self.config);
         self._finder.startFinding();
 
         self.show()

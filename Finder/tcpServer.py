@@ -15,17 +15,16 @@ def client_thread(conn, ip, port, MAX_BUFFER_SIZE=4096):
     # decode input and strip the end of line
     input_from_client = input_from_client_bytes.decode("utf8").rstrip()
 
-    if(input_from_client == "exit"):
+    if (input_from_client == "exit"):
         conn.close()
         sys.exit()
 
     print(input_from_client)
     data = input(">>")
 
-    if(data == "exit") {
+    if (data == "exit"):
         conn.close()
         sys.exit()
-    }
 
     conn.sendall(data.encode().rstrip())  # send it to client
     conn.close()  # close connection
