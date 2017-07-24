@@ -3,16 +3,19 @@ import sys
 from PyQt5 import uic
 from PyQt5.QtCore import QBasicTimer, Qt
 from PyQt5.QtWidgets import QMainWindow, QApplication, QLabel
+from PyQt5.QtNetwork import QUdpSocket, QHostAddress
 
 from ConnectorBus.ConnectorBus import ConnectorBus
-from Finder.Finder import Finder
 from config.Config import Config
+import socket
+from Udp.Server import Server
 
 
 class MainWindow(QMainWindow):
     config = None
     _finder = None
     _connection = None
+    udpSocket = None
 
     def __init__(self):
         super().__init__()
@@ -21,8 +24,22 @@ class MainWindow(QMainWindow):
         self.__initUI()
         self.statusBar().showMessage("Board not connected")
 
-        self._finder = Finder(self.statusBar(), self.config);
-        self._finder.startFinding();
+
+        def get_ip():
+            '''
+            Return IP address
+            :param self:
+            :return:
+            '''
+            return [(s.connect(('8.8.8.8', 53)), s.getsockname()[0], s.close()) for s in
+                    [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]
+
+        udp = Server(self, get_ip(), 5555)
+        udp.start()
+
+        #self.udpSocket = QUdpSocket()
+        #self.udpSocket.bind(5555)
+        #self.udpSocket.readyRead.connect(self.processPendingDatagrams)
 
         self.show()
 
@@ -36,6 +53,17 @@ class MainWindow(QMainWindow):
         self.sendButton.clicked.connect(self.onSend)
         self.timer = QBasicTimer()
         self.timer.start(100, self)
+
+    def processPendingDatagrams(self):
+        while self.udpSocket.hasPendingDatagrams():
+            datagram, host, port = self.udpSocket.readDatagram(self.udpSocket.pendingDatagramSize())
+            try:
+                # Python v3.
+                datagram = str(datagram, encoding='ascii')
+            except TypeError:
+                # Python v2.
+                pass
+            self.console.append("Received datagram: \"%s\"" % datagram)
 
     def onConnect(self):
         self._connection = ConnectorBus(self.config.getOption('tty'), self.config.getOption('baudrate'))

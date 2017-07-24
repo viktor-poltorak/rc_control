@@ -1,17 +1,22 @@
 import asyncio, socket
 
-
 port = 5555
+
+
 def getIP():
     '''
     Return IP address
     :param self:
     :return:
     '''
+    return "127.0.0.1"
     return [(s.connect(('8.8.8.8', 53)), s.getsockname()[0], s.close()) for s in
             [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]
 
+
 class EchoClientProtocol:
+    isRun = True
+
     def __init__(self, message, loop):
         self.message = message
         self.loop = loop
@@ -19,8 +24,11 @@ class EchoClientProtocol:
 
     def connection_made(self, transport):
         self.transport = transport
-        print('Send:', self.message)
-        self.transport.sendto(self.message.encode())
+
+        while self.isRun :
+            message = input(">>")
+            print('Send:', message)
+            self.transport.sendto(message.encode())
 
     def datagram_received(self, data, addr):
         print("Received:", data.decode())
@@ -36,12 +44,16 @@ class EchoClientProtocol:
         loop = asyncio.get_event_loop()
         loop.stop()
 
+
 loop = asyncio.get_event_loop()
-message = "Hello World!"
+message = "board_1"
 connect = loop.create_datagram_endpoint(
     lambda: EchoClientProtocol(message, loop),
     remote_addr=(getIP(), port))
 transport, protocol = loop.run_until_complete(connect)
-loop.run_forever()
-transport.close()
-loop.close()
+
+try:
+    loop.run_forever()
+except KeyboardInterrupt:
+    transport.close()
+    loop.close()
