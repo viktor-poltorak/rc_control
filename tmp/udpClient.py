@@ -25,9 +25,13 @@ class EchoClientProtocol:
     def connection_made(self, transport):
         self.transport = transport
 
-        while self.isRun :
+        while self.isRun:
             message = input(">>")
             print('Send:', message)
+
+            if message == 'exit':
+                self.isRun = False
+
             self.transport.sendto(message.encode())
 
     def datagram_received(self, data, addr):

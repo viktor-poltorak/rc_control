@@ -1,23 +1,22 @@
-from PyQt5.QtCore import QObject
 from PyQt5.QtNetwork import QUdpSocket, QHostAddress
 from functools import partial
 
 
-class Server(QObject):
+class Server():
     _ip = None
     _port = None
     udpSocket = None
     callback = None
     _isRunning = True
 
-    def __init__(self, parent = None, ip="127.0.0.1", port=9999):
-        super.__init__(parent)
+    def __init__(self, ip="127.0.0.1", port=9999):
         self._ip = ip
         self._port = port
-        self.callback = lambda datagram, host, port: print("Recieved {} from {}:{}".format(datagram, host, port))  # default callback
+        self.callback = lambda datagram, host, port: print(
+            "Recieved {} from {}:{}".format(datagram, host, port))  # default callback
 
-    def start(self):
-        self.udpSocket = QUdpSocket(self)
+    def start(self, window):
+        self.udpSocket = QUdpSocket(window)
         self.udpSocket.bind(QHostAddress(self._ip), self._port)
         self.udpSocket.readyRead.connect(self.data_handler)
         print("Udp server started at {}:{}".format(self._ip, self._port))
