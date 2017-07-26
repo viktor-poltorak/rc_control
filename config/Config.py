@@ -12,6 +12,8 @@ class Config:
     brake = 1500
     tty = None
     baudrate = None
+    udp_port = 5555
+    tcp_port = 5555
 
     def __init__(self, fileName="config.ini"):
         self.__configFileName = fileName

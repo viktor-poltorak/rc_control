@@ -1,8 +1,8 @@
 import sys, signal
 from PyQt5 import uic
-from PyQt5.QtCore import QBasicTimer, Qt, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import QBasicTimer, Qt, QDataStream
 from PyQt5.QtWidgets import QMainWindow, QApplication, QLabel
-from PyQt5.QtNetwork import QUdpSocket, QHostAddress
+from PyQt5.QtNetwork import QUdpSocket, QHostAddress, QTcpServer
 
 from config.Config import Config
 from Network.Nettool import get_ip
@@ -12,6 +12,9 @@ from Network.UdpBoardHandler import UdpBoardHandler
 class MainWindow(QMainWindow):
     config = None
     udpSocket = None
+    tcpServer = None
+    tcpBoard = None
+    board_connection = None
 
     def __init__(self):
         super().__init__()
@@ -21,11 +24,17 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage("Board not connected")
 
         # Init uds listener
-        print("Init udp")
+        self._log("Init udp at {}:{}".format(get_ip(), self.config.getOption('udp_port')))
         self.udpSocket = QUdpSocket()
         self.udpSocket.setLocalAddress(QHostAddress(get_ip()))
-        self.udpSocket.bind(5555)
+        self.udpSocket.bind(self.config.getOption('udp_port'))
         self.udpSocket.readyRead.connect(self.udpHandler)
+
+        # Init tcp server
+        self.tcpServer = QTcpServer(self)
+        self._log("Starting TCP at {}:{} ".format(get_ip(), str(self.config.getOption('tcp_port'))))
+        self.tcpServer.listen(QHostAddress(get_ip()), self.config.getOption('tcp_port'))
+        self.tcpServer.newConnection.connect(self.establishBoardConnection)
 
         self.show()
 
@@ -41,21 +50,37 @@ class MainWindow(QMainWindow):
         self.timer.start(100, self)
 
     def udpHandler(self):
-        udp_handler = UdpBoardHandler(self.udpSocket, self.console, self.processTcpConnection)
+        udp_handler = UdpBoardHandler(self.udpSocket, self.console, self.handleBoard, self.config)
         udp_handler.handle_board();
 
-    def processTcpConnection(self, host, port):
-        print("Ura", host, port)
+    def handleBoard(self, host: QHostAddress, port):
+        message = "Board found at {}:{}".format(host.toIPv4Address(), port)
+        self._log(message)
+
+    def establishBoardConnection(self):
+        self.board_connection = self.tcpServer.nextPendingConnection()
+        self.board_connection.readyRead.connect(self.messageFromBoard)
+        self._log("board here")
+
+    def messageFromBoard(self):
+        instr = QDataStream(self.board_connection)
+        instr.setVersion(QDataStream.Qt_5_0)
+        if self.board_connection.bytesAvailable() > 0:
+            self._log(str(self.board_connection.readAll()));
+
+    def sendCommand(self, cmd):
+        self._log("Send: {}".format(cmd))
+        self.board_connection.write(cmd.encode())
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_A:
-            self._connection.send("S:1800;")
+            self.sendCommand("S:1800;")
 
         if event.key() == Qt.Key_D:
-            self._connection.send("S:1300;")
+            self.sendCommand("S:1300;")
 
         if event.key() == Qt.Key_S:
-            self._connection.send("S:1500;")
+            self.sendCommand("S:1500;")
 
     def onButtonUp(self):
         print("up")
@@ -71,14 +96,9 @@ class MainWindow(QMainWindow):
         if not command:
             return None
 
+        self.board_connection.write(command.encode())
         self.console.append(command)
         self.query.setText("")
-
-    def updateConsole(self):
-        response = "DATA"
-        print(response)
-        if response:
-            self.console.append(response)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.config.write()
@@ -94,6 +114,10 @@ class MainWindow(QMainWindow):
             label.setText(text)
             label.adjustSize()
             startPos += 20
+
+    def _log(self, message):
+        print(message)
+        self.console.append(message)
 
 
 if __name__ == '__main__':
