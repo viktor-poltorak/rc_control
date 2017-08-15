@@ -7,7 +7,11 @@ class Config:
     __MainSectionName = "Global"
     # Available option
     title = "Title"
+    # Wheels
     steeringMid = 1500
+    steeringLeft = 1900
+    steeringRight = 1300
+    # Accelerate
     accelerateMid = 1500
     brake = 1500
     tty = None

@@ -1,7 +1,11 @@
-import sys, signal
+import sys
+
+from PyQt5.QtGui import QPixmap
+
+from Wheels import Wheels
 from PyQt5 import uic
 from PyQt5.QtCore import QBasicTimer, Qt, QDataStream
-from PyQt5.QtWidgets import QMainWindow, QApplication, QLabel
+from PyQt5.QtWidgets import QMainWindow, QApplication
 from PyQt5.QtNetwork import QUdpSocket, QHostAddress, QTcpServer
 
 from config.Config import Config
@@ -15,11 +19,15 @@ class MainWindow(QMainWindow):
     tcpServer = None
     tcpBoard = None
     board_connection = None
+    wheels = None
 
     def __init__(self):
         super().__init__()
-
         self.config = Config("config.ini")
+
+        # INIT Controls
+        self.wheels = Wheels(self.config.steeringMid, self.config.steeringLeft, self.config.steeringRight)
+
         self.__initUI()
         self.statusBar().showMessage("Board not connected")
 
@@ -41,13 +49,31 @@ class MainWindow(QMainWindow):
     def __initUI(self):
         # Set up the user interface from Designer.
         uic.loadUi("main.ui", self)
-        self.debug()
+
+        self.updateWheelsImage()
         # Connect up the buttons.
         # self.connectButton.clicked.connect(self.onConnect)
         self.query.returnPressed.connect(self.onSend)
         self.sendButton.clicked.connect(self.onSend)
+        self.clearLogButton.clicked.connect(self.onClearLog)
+        self.debugButton.clicked.connect(self.onDebug)
         self.timer = QBasicTimer()
         self.timer.start(100, self)
+
+    def updateWheelsImage(self):
+        pos = self.wheels.getPos()
+        image = 'res/flat_wheel.png'
+
+        if pos == self.wheels.POS_LEFT:
+            image = 'res/left_wheel.png'
+        if pos == self.wheels.POS_RIGHT:
+            image = 'res/right_wheel.png'
+        # Create widget
+        pixmap = QPixmap(image)
+        self.wheelsImage.setPixmap(pixmap)
+        self.wheelsImage.setFixedWidth(pixmap.width())
+        self.wheelsImage.setFixedHeight(pixmap.height())
+        self.show()
 
     def udpHandler(self):
         udp_handler = UdpBoardHandler(self.udpSocket, self.console, self.handleBoard, self.config)
@@ -69,18 +95,28 @@ class MainWindow(QMainWindow):
             self._log(str(self.board_connection.readAll()));
 
     def sendCommand(self, cmd):
+        cmd = cmd.strip()
         self._log("Send: {}".format(cmd))
-        self.board_connection.write(cmd.encode())
+
+        if self.board_connection.__class__.__name__ != 'NoneType':
+            self.board_connection.write(cmd.encode())
+        else:
+            self._log("Unable send command. No connection")
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_A:
-            self.sendCommand("S:1800;")
+            self.wheels.turnLeft()
+            self.sendCommand(self.wheels.getCommand())
 
         if event.key() == Qt.Key_D:
-            self.sendCommand("S:1300;")
+            self.wheels.turnRight()
+            self.sendCommand(self.wheels.getCommand())
 
         if event.key() == Qt.Key_S:
-            self.sendCommand("S:1500;")
+            self.wheels.resetPos()
+            self.sendCommand(self.wheels.getCommand())
+
+        self.updateWheelsImage()
 
     def onButtonUp(self):
         print("up")
@@ -92,32 +128,40 @@ class MainWindow(QMainWindow):
 
     def onSend(self):
         command = self.query.text()
-
         if not command:
             return None
 
-        self.board_connection.write(command.encode())
-        self.console.append(command)
+        self.sendCommand(command)
         self.query.setText("")
+
+    def onClearLog(self):
+        self.console.setText('')
+
+    def onDebug(self):
+        options = self.config.getOptions()
+        self._log("*********** DEBUG ************")
+        self._log("Wheels:{}".format(self.wheels.getRawPos()))
+        if self.board_connection.__class__.__name__ != 'NoneType':
+            self._log("Rc car IP:{}:{}".format(self.board_connection.localAddress(), self.board_connection.localPort()))
+            # for key in options:
+            #    self._log(key + "=" + str(options[key]))
+        self._log("******************************")
+
+    def timerEvent(self, event):
+        pass
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.config.write()
 
-    def debug(self):
-        options = self.config.getOptions()
-        startPos = 10
-
-        for key in options:
-            label = QLabel(self)
-            label.move(0, startPos)
-            text = key + "=" + str(options[key])
-            label.setText(text)
-            label.adjustSize()
-            startPos += 20
-
     def _log(self, message):
         print(message)
         self.console.append(message)
+
+
+class CommandHelper:
+    @staticmethod
+    def getCommand(mode, value):
+        return "%s:%s;".format(mode, value)
 
 
 if __name__ == '__main__':

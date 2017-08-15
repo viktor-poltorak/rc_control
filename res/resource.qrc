@@ -1,0 +1,7 @@
+<RCC>
+  <qresource prefix="images">
+    <file>left_wheel.png</file>
+    <file>right_wheel.png</file>
+    <file>flat_wheel.png</file>
+  </qresource>
+</RCC>
