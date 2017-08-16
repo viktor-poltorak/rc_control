@@ -6,10 +6,8 @@ class Accelerator:
 
     curSpeed = False
 
-    def __init__(self, midSpeed, maxSpeed, minSpeed):
-        self.midSpeed = midSpeed
-        self.maxSpeed = maxSpeed
-        self.minSpeed = minSpeed
+    def __init__(self, config, mainWindow):
+        pass
 
     def speedUp(self):
         self.curSpeed = self.curSpeed + self.step
