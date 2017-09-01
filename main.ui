@@ -67,6 +67,9 @@
       <height>31</height>
      </rect>
     </property>
+    <property name="focusPolicy">
+     <enum>Qt::NoFocus</enum>
+    </property>
     <property name="text">
      <string>Send</string>
     </property>
@@ -105,6 +108,9 @@
       <height>31</height>
      </rect>
     </property>
+    <property name="focusPolicy">
+     <enum>Qt::NoFocus</enum>
+    </property>
     <property name="text">
      <string>Clear Log</string>
     </property>
@@ -117,6 +123,9 @@
       <width>180</width>
       <height>31</height>
      </rect>
+    </property>
+    <property name="focusPolicy">
+     <enum>Qt::NoFocus</enum>
     </property>
     <property name="text">
      <string>Show Debug info</string>

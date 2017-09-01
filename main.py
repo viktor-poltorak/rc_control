@@ -3,6 +3,7 @@ import sys
 from PyQt5.QtGui import QPixmap
 
 from Wheels import Wheels
+from Accelerator import Accelerator
 from PyQt5 import uic
 from PyQt5.QtCore import QBasicTimer, Qt, QDataStream
 from PyQt5.QtWidgets import QMainWindow, QApplication
@@ -20,6 +21,7 @@ class MainWindow(QMainWindow):
     tcpBoard = None
     board_connection = None
     wheels = None
+    accelerator = None
 
     def __init__(self):
         super().__init__()
@@ -27,6 +29,7 @@ class MainWindow(QMainWindow):
 
         # INIT Controls
         self.wheels = Wheels(self.config.steeringMid, self.config.steeringLeft, self.config.steeringRight)
+        self.accelerator = Accelerator(self.config, self)
 
         self.__initUI()
         self.statusBar().showMessage("Board not connected")
@@ -104,6 +107,16 @@ class MainWindow(QMainWindow):
             self._log("Unable send command. No connection")
 
     def keyPressEvent(self, event):
+        '''
+        A - left
+        D - right
+        S - wheel mid
+        Up - speed up
+        Down - speed down
+        Space - break
+        :param event:
+        :return:
+        '''
         if event.key() == Qt.Key_A:
             self.wheels.turnLeft()
             self.sendCommand(self.wheels.getCommand())
@@ -115,6 +128,15 @@ class MainWindow(QMainWindow):
         if event.key() == Qt.Key_S:
             self.wheels.resetPos()
             self.sendCommand(self.wheels.getCommand())
+
+        if event.key() == Qt.Key_Space:
+            self.accelerator.brake()
+
+        if event.key() == Qt.Key_Up:
+            self.accelerator.speedUp()
+
+        if event.key() == Qt.Key_Down:
+            self.accelerator.speedDown()
 
         self.updateWheelsImage()
 

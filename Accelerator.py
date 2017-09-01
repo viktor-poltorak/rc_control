@@ -1,33 +1,50 @@
 class Accelerator:
+    # Accelerate
+    accelerateMid = 1500
+    brakePos = 1500
+
     maxSpeed = False
     minSpeed = False
     midSpeed = False
     step = 10
 
-    curSpeed = False
+    connection = None
+    curPos = False
 
-    def __init__(self, config, mainWindow):
+    def __init__(self, config, connection):
+        """
+        :param config: Config
+        :param connection: Used to send commands (in current case it is main window object
+        """
+        self.accelerateMid = int(config.accelerateMid)
+        self.curPos = self.accelerateMid
+        self.brakePos = int(config.brake)
+        self.connection = connection
         pass
 
+    def sendCommand(self, command):
+        """
+        Decorator for send commands
+        :param command: string
+        :return:
+        """
+        self.connection.sendCommand(command)
+
     def speedUp(self):
-        self.curSpeed = self.curSpeed + self.step
+        self.curPos = int(self.curPos) + int(self.step)
+        self.sendCommand(self.getCommand())
 
     def speedDown(self):
-        self.curSpeed = self.curSpeed - self.step
+        self.curPos = int(self.curPos) - int(self.step)
+        self.sendCommand(self.getCommand())
 
     def brake(self):
-        self.curSpeed = self.midSpeed
+        self.curPos = int(self.brakePos)
+        self.sendCommand(self.getCommand())
+        self.curPos = self.accelerateMid
 
     def getRawPos(self):
-        return self._curPos
+        return self.curPos
 
     def getCommand(self) -> str:
-        return "{}:{};".format('S', self.getRawPos())
-
-    def getPos(self) -> int:
-        if self._curPos == self._leftPos:
-            return self.POS_LEFT
-        if self._curPos == self._rightPos:
-            return self.POS_RIGHT
-
-        return self.POS_MID
+        return "{}:{};".format('A', self.getRawPos())
