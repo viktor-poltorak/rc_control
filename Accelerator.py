@@ -1,4 +1,5 @@
 class Accelerator:
+    commandKey = "A"
     # Accelerate
     accelerateMid = 1500
     brakePos = 1500
@@ -43,8 +44,25 @@ class Accelerator:
         self.sendCommand(self.getCommand())
         self.curPos = self.accelerateMid
 
+    def backward(self):
+        self.brake();
+        command = "{}:{};{}:{};{}:{};".format(self.commandKey, self.accelerateMid + 360,
+                                              self.commandKey, self.accelerateMid,
+                                              self.commandKey, self.accelerateMid - 170)
+        self.sendCommand(command)
+        # self.curPos = self.accelerateMid
+        # self.sendCommand(self.getCommand())
+
+    def forward(self):
+        if self.curPos < (self.accelerateMid + 100):
+            startSpeed = self.accelerateMid + 130
+            command = "{}:{};{}:{};".format(self.commandKey, self.brakePos,
+                                                  self.commandKey, startSpeed)
+            self.sendCommand(command)
+            self.curPos = startSpeed
+
     def getRawPos(self):
         return self.curPos
 
     def getCommand(self) -> str:
-        return "{}:{};".format('A', self.getRawPos())
+        return "{}:{};".format(self.commandKey, self.getRawPos())

@@ -132,11 +132,17 @@ class MainWindow(QMainWindow):
         if event.key() == Qt.Key_Space:
             self.accelerator.brake()
 
-        if event.key() == Qt.Key_Up:
+        if event.key() == Qt.Key_E:
             self.accelerator.speedUp()
 
-        if event.key() == Qt.Key_Down:
+        if event.key() == Qt.Key_Q:
             self.accelerator.speedDown()
+
+        if event.key() == Qt.Key_Up:
+            self.accelerator.forward()
+
+        if event.key() == Qt.Key_Down:
+            self.accelerator.backward()
 
         self.updateWheelsImage()
 
